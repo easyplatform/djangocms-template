@@ -8,12 +8,23 @@ services:
         build:
             context: '.'
             dockerfile: Dockerfile
-        ports:
-            - '8000:80'
         volumes:
             - '.:/app:rw'
             - './data:/data:rw'
-        command: python manage.py runserver 0.0.0.0:80
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.web.entrypoints=http"
+            - "traefik.http.routers.web.rule=Host(`www.easy-platform.business`)"
+            - "traefik.http.middlewares.web-https-redirect.redirectscheme.scheme=https"
+            - "traefik.http.routers.web.middlewares=web-https-redirect"
+            - "traefik.http.routers.web-secure.entrypoints=https"
+            - "traefik.http.routers.web-secure.rule=Host(`www.easy-platform.business`)"
+            - "traefik.http.routers.web-secure.tls=true"
+            - "traefik.http.routers.web-secure.tls.certresolver=http"
+            - "traefik.http.routers.web-secure.service=portainer"
+            - "traefik.http.services.web.loadbalancer.server.port=9101"
+            - "traefik.docker.network=proxy"       
+        command: python manage.py runserver 0.0.0.0:9101
         env_file: backend/.local-env
 
     frontend:
